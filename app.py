@@ -16,7 +16,14 @@ class Document:
         self.crier = crier,  # pregoeiro
 
     def __repr__(self):
-        return "bidder : " + self.bidder[0] + ", bidder_unit : " + self.bidder_unit[0] + ", crier : " + self.crier[0]
+        return "bidder: " + self.bidder[0] + ",\nbidder_unit: " + self.bidder_unit[0] + ",\ncrier: " + self.crier[0]
+
+    def serialize(self):
+        return {
+            "bidder": self.bidder,
+            "bidder_unit": self.bidder_unit,
+            "crier": self.crier
+        }
 
 
 class Proposal:
@@ -25,16 +32,14 @@ class Proposal:
         self.company_name = name
         self.proposal_value = value
 
-    # def create_proposal(self, name, value):
-    #     proposal = {
-    #         'name': name,
-    #         'value': value
-    #     }
-    #     self.proposals.append(proposal)
-    #     return proposal
-
     def __repr__(self):
-        return "company_name : " + self.company_name + ", value : " + str(self.proposal_value)
+        return "company_name: " + self.company_name + ",\nvalue: " + str(self.proposal_value)
+
+    def serialize(self):
+        return {
+            "company_name": self.company_name,
+            "value": self.proposal_value
+        }
 
 
 class Bidding:
@@ -58,6 +63,13 @@ class Bidding:
 
         self.__class__.trading_floor_count += 1
 
+    def __repr__(self):
+        return "trading_floor_number: " + str(self.trading_floor_number) + ",\nauthority: " + self.authority[
+            0] + ",\ntrading_floor_team: " + repr(self.trading_floor_team) + ",\ndocument: " + repr(
+            self.document[0]) + ",\ncreated_at: " + str(self.created_at[0].timestamp()) + ",\nfinish_at: " + str(
+            self.finish_at[
+                0].timestamp()) + ",\nowned_by: " + str(self.owned_by[0]) + ",\nproposals: " + repr(self.proposals)
+
     def add_proposal(self, name, value):
         try:
             if datetime.now().timestamp() <= self.finish_at[0].timestamp():
@@ -69,23 +81,45 @@ class Bidding:
 
     def define_best_proposal(self):
         proposals = self.proposals
-        min_value = proposals[0].value
-        self.owned_by = proposals[0].name
+        min_value = proposals[0].proposal_value
+        self.owned_by = proposals[0].company_name
         for proposal in proposals:
-            if proposal.value < min_value:
-                min_value = proposal.value
-                self.owned_by = proposal.name
+            if proposal.proposal_value < min_value:
+                min_value = proposal.proposal_value
+                self.owned_by = proposal.company_name
+
+    def clone(self):
+        authority = self.authority
+        bidder = "deafult"
+        bidder_unit = "deafult"
+        crier = "deafult"
+        deadline = 0  # em dias
+        bid_value = self.bid_value
+        document_date = self.document_date
+        documentation_address = self.documentation_address
+        new_bidding = Bidding(authority, deadline, bidder, bidder_unit, crier, bid_value, document_date,
+                              documentation_address)
+        new_bidding.finish_at = self.finish_at
+        new_bidding.document = self.document
+        new_bidding.proposals = copy(self.proposals)
+        return new_bidding
 
     def serialize(self):
+        proposals = self.proposals
+        new_proposals = []
+
+        for proposal in proposals:
+            new_proposals.append(proposal.serialize())
+
         return {
             "trading_floor_number": self.trading_floor_number,
             "authority": self.authority,
             "trading_floor_team": self.trading_floor_team,
-            "document": repr(self.document),
-            "created_at": self.created_at,
-            "finish_at": self.finish_at,
+            "document": self.document[0].serialize(),
+            "created_at": str(self.created_at[0].timestamp()),
+            "finish_at": str(self.finish_at[0].timestamp()),
             "owened_by": self.owned_by,
-            "proposals": repr(self.proposals)
+            "proposals": new_proposals
         }
 
 
@@ -106,15 +140,6 @@ class Blockchain:
         self.chain.append(block)
         return block
 
-    def serialize(self, block):
-        return {
-            "index": block['index'],
-            "timestamp": block['timestamp'],
-            "proof": block['proof'],
-            "bidding": block['bidding'].serialize(),
-            "previous_hash": block['previous_hash']
-        }
-
     def get_previous_block(self):
         return self.chain[-1]
 
@@ -133,13 +158,14 @@ class Blockchain:
         encoded_block = json.dumps(block, sort_keys=True).encode()
         return hashlib.sha256(encoded_block).hexdigest()
 
-    def is_chain_valid(self, chain):
-        previous_block = chain[0]
+    def is_chain_valid(self):
+        previous_block = self.chain[0]
         block_index = 1
-        chain_length = len(chain)
+        chain_length = len(self.chain)
         while block_index < chain_length:
-            block = chain[block_index]
-            if block['previous_hash'] != self.hash(previous_block):
+            block = self.chain[block_index]
+            if block['previous_hash'] != self.hash(
+                    self.serialize(previous_block) if previous_block['bidding'] else previous_block):
                 return False
             previous_proof = previous_block['proof']
             proof = block['proof']
@@ -149,6 +175,15 @@ class Blockchain:
             previous_block = block
             block_index += 1
         return True
+
+    def serialize(self, block):
+        return {
+            "index": block['index'],
+            "timestamp": block['timestamp'],
+            "proof": block['proof'],
+            "bidding": block['bidding'].serialize(),
+            "previous_hash": block['previous_hash']
+        }
 
 
 # Part 2 - Mining our Blockchain
@@ -171,10 +206,11 @@ def mine_block():
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
     proof = blockchain.proof_of_work(previous_proof)
-    previous_hash = blockchain.hash(previous_block)
+    previous_hash = blockchain.hash(
+        blockchain.serialize(previous_block) if previous_block['bidding'] else previous_block)
     block = blockchain.create_block(proof, openned_biddings.pop(0), previous_hash)
-    response = {'message': 'Parabéns, você acaba de minerar um bloco!',
-                'block': blockchain.serialize(block)}
+    response = {'message': 'Bloco minerado com sucesso!',
+                'bidding': blockchain.serialize(block)}
     return jsonify(response), 200
 
 
@@ -197,7 +233,7 @@ def get_chain():
 # Checking if block is valid
 @app.route('/is_valid', methods=['GET'])
 def is_valid():
-    valid = blockchain.is_chain_valid(blockchain.chain)
+    valid = blockchain.is_chain_valid()
     response = {'message': ('Everything is ok.' if valid else 'Houston, we have a problem.')}
     return jsonify(response), 200
 
@@ -248,37 +284,31 @@ def send_proposal():
             index = int(request.form['bidding_id'])
             if index >= 0 & index < len(blockchain.chain):
                 old_bidding = blockchain.chain[index]['bidding']
-                authority = old_bidding.authority
-                bidder = 'qualquer'
-                bidder_unit = 'qualquer'
-                crier = 'qualquer'
-                deadline = 0  # em dias
-                bid_value = old_bidding.bid_value
-                document_date = old_bidding.document_date
-                documentation_address = old_bidding.documentation_address
-                new_bidding = Bidding(authority, deadline, bidder, bidder_unit, crier, bid_value, document_date,
-                                      documentation_address)
-
-                new_bidding.finish_at = old_bidding.finish_at
-                new_bidding.document = old_bidding.document
-
+                new_bidding = old_bidding.clone()
                 openned_biddings.append(new_bidding)
-
                 new_bidding.add_proposal(request.form['name'], float(request.form['value']))
-
                 return jsonify('OK'), 200
-            # response = openned_biddings[request.form['bidding_id']].add_proposal(request.form['name'], request.form['value'])
-
-            # return jsonify(old_bidding['bidding'].serialize()), 200
-
-            # if response:
             return jsonify('ERROR'), 400
         except ValueError:
             return 'Invalid parameters', 200
     return 'Invalid request.', 400
 
-# 4. Fechar licitação ( após prazo )
-# 5. Devolver a licitação corrente
 
+# 4. Definir ganhador do proceso licitatório
+@app.route('/define_owner', methods=['POST'])
+def define_owner():
+    if request.method == 'POST':
+        try:
+            index = int(request.form['bidding_id'])
+            if index >= 0 & index < len(blockchain.chain):
+                bidding = blockchain.chain[index]['bidding']
+                new_bidding = bidding.clone()
+                new_bidding.define_best_proposal()
+                openned_biddings.append(new_bidding)
+                return jsonify('OK'), 200
+            return jsonify('ERROR'), 400
+        except ValueError:
+            return 'Invalid parameters', 200
+    return 'Invalid request.', 400
 # Running the app
 # app.run(host='0.0.0.0', port=5000)
