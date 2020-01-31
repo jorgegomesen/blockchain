@@ -6,8 +6,8 @@ import json
 class Blockchain:
 
     def __init__(self):
-        self.chain = []
-        self.create_block(proof=1, bid=None, previous_hash='0')
+        self.chain = []  # cadeia de blocos
+        self.create_block(proof=1, bid=None, previous_hash='0')  # criação do bloco gênesis
 
     def create_block(self, proof, bid, previous_hash):
         block = {

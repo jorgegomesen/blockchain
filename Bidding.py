@@ -9,18 +9,18 @@ class Bidding:
 
     def __init__(self, authority, deadline, bidder, bidder_unit, crier, bid_value, document_date,
                  documentation_address):
-        self.trading_floor_number = str(self.__class__.trading_floor_count) + '/' + str(datetime.now().year),
-        self.authority = authority,  # autoridade é quem assina o processo administrativo
-        self.trading_floor_team = [],  # equipe de pregão escolhida pelo pregoeiro
-        self.document = Document(bidder, bidder_unit, crier),  # edital
-        self.created_at = datetime.now(),  # quando foi criada
-        self.finish_at = datetime.now() + timedelta(days=int(deadline)),  # data limite para obter-se um proprietário
-        self.owned_by = None,  # proprietário da licitação
+        self.trading_floor_number = str(self.__class__.trading_floor_count) + '/' + str(datetime.now().year)
+        self.authority = authority  # autoridade é quem assina o processo administrativo
+        self.trading_floor_team = []  # equipe de pregão escolhida pelo pregoeiro
+        self.document = Document(bidder, bidder_unit, crier)  # edital
+        self.created_at = datetime.now()  # quando foi criada
+        self.finish_at = datetime.now() + timedelta(days=int(deadline))  # data limite para obter-se um proprietário
+        self.owned_by = None  # proprietário da licitação
         self.proposals = []  # propostas
-        self.date_session = None,  # data da sessão
-        self.time_session = None,  # horário da sessão
-        self.bid_value = bid_value,  # valor da licitação
-        self.document_date = document_date,  # data do edital
+        self.date_session = None  # data da sessão
+        self.time_session = None  # horário da sessão
+        self.bid_value = bid_value  # valor da licitação
+        self.document_date = document_date  # data do edital
         self.documentation_address = documentation_address  # endereço para envio da documentação
 
         self.__class__.trading_floor_count += 1
@@ -52,10 +52,10 @@ class Bidding:
 
     def clone(self):
         authority = self.authority[0]
-        bidder = "deafult"
-        bidder_unit = "deafult"
-        crier = "deafult"
-        deadline = 0  # em dias
+        bidder = "default"
+        bidder_unit = "default"
+        crier = "default"
+        deadline = 0
         bid_value = self.bid_value
         document_date = self.document_date
         documentation_address = self.documentation_address
@@ -77,9 +77,9 @@ class Bidding:
             "trading_floor_number": self.trading_floor_number,
             "authority": self.authority,
             "trading_floor_team": self.trading_floor_team,
-            "document": self.document[0].serialize(),
-            "created_at": str(self.created_at[0].timestamp()),
-            "finish_at": str(self.finish_at[0].timestamp()),
+            "document": self.document.serialize(),
+            "created_at": str(self.created_at),
+            "finish_at": str(self.finish_at),
             "owened_by": self.owned_by,
             "proposals": new_proposals
         }
