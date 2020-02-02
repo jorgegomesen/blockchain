@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
-from blockchain.Bidding import Bidding
 from blockchain.Blockchain import Blockchain
+from blockchain.Bidding import Bidding
 
 # Creating a Web App
 app = Flask(__name__)
@@ -10,6 +10,7 @@ blockchain = Blockchain()
 
 # Creating a Bidding
 openned_biddings = []
+
 
 # Mining a new block
 @app.route('/mine_block', methods=['GET'])

@@ -28,13 +28,12 @@ class Bidding:
     def __repr__(self):
         return "trading_floor_number: " + str(self.trading_floor_number) + ",\nauthority: " + self.authority[
             0] + ",\ntrading_floor_team: " + repr(self.trading_floor_team) + ",\ndocument: " + repr(
-            self.document[0]) + ",\ncreated_at: " + str(self.created_at[0].timestamp()) + ",\nfinish_at: " + str(
-            self.finish_at[
-                0].timestamp()) + ",\nowned_by: " + str(self.owned_by[0]) + ",\nproposals: " + repr(self.proposals)
+            self.document) + ",\ncreated_at: " + str(self.created_at) + ",\nfinish_at: " + str(
+            self.finish_at) + ",\nowned_by: " + str(self.owned_by[0]) + ",\nproposals: " + repr(self.proposals)
 
     def add_proposal(self, name, value):
         try:
-            if datetime.now().timestamp() <= self.finish_at[0].timestamp():
+            if datetime.now().timestamp() <= self.finish_at.timestamp():
                 self.proposals.append(Proposal(name, value))
                 return True
             return False
@@ -42,16 +41,16 @@ class Bidding:
             return False
 
     def define_best_proposal(self):
-        proposals = self.proposals
-        min_value = proposals[0].proposal_value
-        self.owned_by = proposals[0].company_name
-        for proposal in proposals:
+        print(self.proposals)
+        min_value = self.proposals[0].proposal_value
+        self.owned_by = self.proposals[0].company_name
+        for proposal in self.proposals:
             if proposal.proposal_value < min_value:
                 min_value = proposal.proposal_value
                 self.owned_by = proposal.company_name
 
     def clone(self):
-        authority = self.authority[0]
+        authority = self.authority
         bidder = "default"
         bidder_unit = "default"
         crier = "default"
